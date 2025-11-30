@@ -8,6 +8,14 @@ A simple HTTP server built with Python, providing a simple blog system.
 $ python main.py
 ```
 
+The login:
+```console
+Username: aris
+Password: aris
+```
+You can set it through `setup_account()` in `server.py`.
+
+
 ## Project Structure
 
 - `main.py` - Server entry point
