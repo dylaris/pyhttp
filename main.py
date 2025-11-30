@@ -1,7 +1,6 @@
 import logging
 import sys
 from server import HTTPServer
-from request import HTTPRequest
 
 # Initialize log system
 logging.basicConfig(
@@ -13,6 +12,6 @@ logging.basicConfig(
 if __name__ == "__main__":
     server = HTTPServer()
     server.start()
-    # while True:
-    server.wait_request()
+    while True:
+        server.wait()
     server.stop()

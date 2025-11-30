@@ -1,6 +1,7 @@
 import logging
 import socket
-import threading
+from request import HTTPRequest
+from router import HTTPRouter
 
 logger = logging.getLogger(__name__)
 
@@ -9,6 +10,7 @@ class HTTPServer:
         self.host = host
         self.port = port
         self.sock = None
+        self.router = HTTPRouter()
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -24,15 +26,17 @@ class HTTPServer:
             self.sock = None
         logger.info("Server stopped")
 
-    def wait_request(self):
+    def wait(self):
         client_socket, client_address = self.sock.accept()
         host, port = client_address[0], client_address[1]
-        logger.info(f"Client {host}:{port} connected")
 
-        # client_thread = threading.Thread(
-        #     target=self.handle_request,
-        #     args=(client_socket, host, port)
-        # )
-        # client_thread.daemon = True
-        #
-        # client_thread.start()
+        logger.info(f"Client {host}:{port} connected")
+        logger.info(f"Server processing {host}:{port}")
+
+        req = HTTPRequest(client_socket)
+        req.parse()
+
+        self.router.route(req)
+
+        client_socket.close()
+        logger.info(f"Client {host}:{port} disconnected")

@@ -1,11 +1,8 @@
-import logging
 import urllib.parse
 
-logger = logging.getLogger(__name__)
-
 class HTTPRequest:
-    def __init__(self, raw_data):
-        self.raw_data = raw_data
+    def __init__(self, sock):
+        self.sock = sock
         # request line
         self.method = None
         self.query_path = None
@@ -17,7 +14,7 @@ class HTTPRequest:
         self.body = None
 
     def parse(self):
-        logger.debug("parse request")
+        self.data = self.sock.recv(1024).decode("utf-8") # may overflow
         self._parse_request_line()
         self._parse_request_headers()
         self._parse_request_body()
@@ -29,8 +26,7 @@ class HTTPRequest:
         return self.query_params.get(name)
 
     def _parse_request_line(self):
-        logger.debug("parse request line")
-        lines = self.raw_data.split("\r\n", 1)
+        lines = self.data.split("\r\n", 1)
         request_line = lines[0]
         method, path, version = request_line.split(" ")
         url_parts = path.split("?", 1)
@@ -53,8 +49,7 @@ class HTTPRequest:
                     self.query_params[key] = ""
 
     def _parse_request_headers(self):
-        logger.debug("parse request headers")
-        lines = self.raw_data.split("\r\n")
+        lines = self.data.split("\r\n")
         for i in range(1, len(lines)):
             line = lines[i]
             if line == "":
@@ -64,8 +59,7 @@ class HTTPRequest:
                 self.headers[key.lower()] = val
 
     def _parse_request_body(self ):
-        logger.debug("parse request body")
-        parts = self.raw_data.split("\r\n\r\n", 1)
+        parts = self.data.split("\r\n\r\n", 1)
         if len(parts) > 1:
             self.body = parts[1]
             content_length = self.get_header("content-length")
