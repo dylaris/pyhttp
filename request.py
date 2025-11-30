@@ -12,18 +12,23 @@ class HTTPRequest:
         self.headers = {}
         # request body
         self.body = None
+        self.form_data = {}
 
     def parse(self):
         self.data = self.sock.recv(1024).decode("utf-8") # may overflow
         self._parse_request_line()
         self._parse_request_headers()
         self._parse_request_body()
+        self._parse_form_data()
 
     def get_header(self, name):
         return self.headers.get(name.lower())
 
     def get_query_param(self, name):
         return self.query_params.get(name)
+
+    def get_form_data(self, name):
+        return self.form_data.get(name)
 
     def _parse_request_line(self):
         lines = self.data.split("\r\n", 1)
@@ -58,13 +63,32 @@ class HTTPRequest:
                 key, val = line.split(": ")
                 self.headers[key.lower()] = val
 
-    def _parse_request_body(self ):
+    def _parse_request_body(self):
         parts = self.data.split("\r\n\r\n", 1)
         if len(parts) > 1:
             self.body = parts[1]
             content_length = self.get_header("content-length")
             if content_length:
                 self.body = self.body[:int(content_length)]
+
+    def _parse_form_data(self):
+        if self.method == "POST" and self.body:
+            content_type = self.get_header("content-type")
+            if content_type == "application/x-www-form-urlencoded":
+                pairs = self.body.split("&")
+                for pair in pairs:
+                    if "=" in pair:
+                        # k1=v1&k2=v2
+                        key, val = pair.split("=", 1)
+                        key = urllib.parse.unquote(key)
+                        val = urllib.parse.unquote(val)
+                        self.form_data[key] = val
+                    else:
+                        # k1&k2=v2
+                        key = urllib.parse.unquote(key)
+                        self.form_data[key] = ""
+            elif content_type == "application/json":
+                pass
 
     def __str__(self):
         result = f"{self.method} {self.path} {self.version}\n"
@@ -74,6 +98,10 @@ class HTTPRequest:
         if self.query_params:
             result += "Query Parameters:\n"
             for key, val in self.query_params.items():
+                result += f"  {key}: {val}\n"
+        if self.form_data:
+            result += "Form Data:\n"
+            for key, val in self.form_data.items():
                 result += f"  {key}: {val}\n"
         if self.body:
             result += f"Body: {self.body}\n"

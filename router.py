@@ -6,14 +6,27 @@ class HTTPRouter:
     def __init__(self):
         self.routes = {}
 
-    def add(self, path, handler):
-        self.routes[path] = handler
+    def add(self, method, path, handler):
+        if method not in self.routes:
+            self.routes[method] = {}
+        self.routes[method][path] = handler
 
-    def route(self, req):
-        print(req)
-        query_path = req.path
-        if query_path not in self.routes:
-            query_path = "__invalid__"
-        handler = self.routes[query_path]
-        resp = handler(req)
+    def valid(self, method, path):
+        if method not in self.routes or path not in self.routes[method]:
+            return False
+        else:
+            return True
+
+    def route(self, ctx):
+        if not ctx["login"]:
+            ctx["request"].path = "/login"
+
+        if not self.valid(ctx["request"].method, ctx["request"].path):
+            ctx["request"].method = "GET"
+            ctx["request"].path = "/dead"
+
+        print(ctx["request"])
+
+        handler = self.routes[ctx["request"].method][ctx["request"].path]
+        resp = handler(ctx)
         return resp

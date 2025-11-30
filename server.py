@@ -3,7 +3,7 @@ import socket
 import threading
 from request import HTTPRequest
 from router import HTTPRouter
-from handler import BlogHandler
+from handler import HTTPHandler
 
 logger = logging.getLogger(__name__)
 
@@ -13,10 +13,11 @@ class HTTPServer:
         self.port = port
         self.sock = None
         self.router = HTTPRouter()
-        self.handler = BlogHandler()
+        self.handler = HTTPHandler()
+        self.login = False
 
-        self.register("__invalid__", self.handler.invalid)
-        self.register("/", self.handler.home)
+        self.setup_account("aris", "aris")
+        self.setup_routes()
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -35,8 +36,19 @@ class HTTPServer:
     def process(self, sock, host, port):
         req = HTTPRequest(sock)
         req.parse()
-        resp = self.router.route(req)
+
+        ctx = {
+            "username": self.username,
+            "password": self.password,
+            "login": self.login,
+            "request": req
+        }
+
+        resp = self.router.route(ctx)
         sock.sendall(resp.to_bytes())
+
+        self.login = ctx["login"]
+
         sock.close()
         logger.info(f"Client {host}:{port} disconnected")
 
@@ -54,5 +66,13 @@ class HTTPServer:
         client_thread.daemon = True
         client_thread.start()
 
-    def register(self, path, handler):
-        self.router.add(path, handler)
+    def setup_routes(self):
+        self.router.add("GET", "/", self.handler.home)
+        self.router.add("GET", "/login", self.handler.login)
+        self.router.add("POST", "/login", self.handler.login)
+        self.router.add("GET", "/dead", self.handler.dead)
+
+    def setup_account(self, name, passwd):
+        self.username = name
+        self.password = passwd
+
