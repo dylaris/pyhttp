@@ -15,7 +15,7 @@ class HTTPRequest:
         self.form_data = {}
 
     def parse(self):
-        self.data = self.sock.recv(1024).decode("utf-8") # may overflow
+        self.data = self.sock.recv(1024*10).decode("utf-8") # may overflow
         self._parse_request_line()
         self._parse_request_headers()
         self._parse_request_body()

@@ -67,10 +67,14 @@ class HTTPServer:
         client_thread.start()
 
     def setup_routes(self):
-        self.router.add("GET", "/", self.handler.home)
+        self.router.add("GET", "/", self.handler.login)
+        self.router.add("POST", "/", self.handler.login)
         self.router.add("GET", "/login", self.handler.login)
         self.router.add("POST", "/login", self.handler.login)
+        self.router.add("GET", "/home", self.handler.home)
+        self.router.add("GET", "/blog", self.handler.blog)
         self.router.add("GET", "/dead", self.handler.dead)
+        self.router.add("GET", "/style.css", self.handler.css)
 
     def setup_account(self, name, passwd):
         self.username = name

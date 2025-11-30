@@ -18,14 +18,9 @@ class HTTPRouter:
             return True
 
     def route(self, ctx):
-        if not ctx["login"]:
-            ctx["request"].path = "/login"
-
         if not self.valid(ctx["request"].method, ctx["request"].path):
             ctx["request"].method = "GET"
             ctx["request"].path = "/dead"
-
-        print(ctx["request"])
 
         handler = self.routes[ctx["request"].method][ctx["request"].path]
         resp = handler(ctx)
