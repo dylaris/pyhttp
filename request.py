@@ -5,7 +5,7 @@ class HTTPRequest:
         self.sock = sock
         # request line
         self.method = None
-        self.query_path = None
+        self.path = None
         self.query_params = {}
         self.version = None
         # request headers
@@ -32,7 +32,7 @@ class HTTPRequest:
         url_parts = path.split("?", 1)
         self.method = method
         self.version = version
-        self.query_path = url_parts[0]
+        self.path = url_parts[0]
         query_string = url_parts[1] if len(url_parts) > 1 else ""
         if query_string:
             pairs = query_string.split("&")
@@ -67,7 +67,7 @@ class HTTPRequest:
                 self.body = self.body[:int(content_length)]
 
     def __str__(self):
-        result = f"{self.method} {self.query_path} {self.version}\n"
+        result = f"{self.method} {self.path} {self.version}\n"
         result += "Headers:\n"
         for key, val in self.headers.items():
             result += f"  {key}: {val}\n"

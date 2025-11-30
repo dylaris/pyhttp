@@ -1,22 +1,23 @@
 class HTTPResponse:
-    def __init__(self, sock):
-        self.sock = sock
+    def __init__(self, status_code, body="", content_type="text/html"):
+        self.status_code = status_code
+        self.body = body
+        self.headers = {
+            "Content-Type": content_type,
+            "Content-Length": str(len(body.encode("utf-8")))
+        }
 
-    def send(self, status_code, status_text, body, content_type="text/plain"):
-        response = f"HTTP/1.1 {status_code} {status_text}\r\n"
-        response += f"Content-Type: {content_type}\r\n"
-        response += f"Content-Length: {len(body)}\r\n"
-        response += "Connection: close\r\n"
-        response += "\r\n"
-        response += body
-        self.sock.sendall(response.encode("utf-8"))
+    def to_bytes(self):
+        status_text = {
+            200: "OK",
+            404: "Not Found",
+            500: "Internal Server Error"
+        }
 
-    def report(self, status_code, message):
-        body = f"""<html>
-        <body>
-            <h1>{status_code} Error</h1>
-            <p>{message}</p>
-        </body>
-        </html>
-        """
-        self.sock.send(status_code, message, body, "text/html")
+        response_line = f"HTTP/1.1 {self.status_code} {status_text.get(self.status_code, 'Unknown')}\r\n"
+
+        headers = ""
+        for key, value in self.headers.items():
+            headers += f"{key}: {value}\r\n"
+
+        return (response_line + headers + "\r\n" + self.body).encode("utf-8")

@@ -1,12 +1,19 @@
-from handler import HTTPHandler
+import logging
+
+logger = logging.getLogger(__name__)
 
 class HTTPRouter:
-    def __init(self):
+    def __init__(self):
         self.routes = {}
 
     def add(self, path, handler):
-        pass
+        self.routes[path] = handler
 
     def route(self, req):
-        handler = HTTPHandler()
-        handler.process(req)
+        print(req)
+        query_path = req.path
+        if query_path not in self.routes:
+            query_path = "__invalid__"
+        handler = self.routes[query_path]
+        resp = handler(req)
+        return resp

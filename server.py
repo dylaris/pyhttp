@@ -1,7 +1,9 @@
 import logging
 import socket
+import threading
 from request import HTTPRequest
 from router import HTTPRouter
+from handler import BlogHandler
 
 logger = logging.getLogger(__name__)
 
@@ -11,6 +13,10 @@ class HTTPServer:
         self.port = port
         self.sock = None
         self.router = HTTPRouter()
+        self.handler = BlogHandler()
+
+        self.register("__invalid__", self.handler.invalid)
+        self.register("/", self.handler.home)
 
     def start(self):
         self.sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
@@ -26,6 +32,14 @@ class HTTPServer:
             self.sock = None
         logger.info("Server stopped")
 
+    def process(self, sock, host, port):
+        req = HTTPRequest(sock)
+        req.parse()
+        resp = self.router.route(req)
+        sock.sendall(resp.to_bytes())
+        sock.close()
+        logger.info(f"Client {host}:{port} disconnected")
+
     def wait(self):
         client_socket, client_address = self.sock.accept()
         host, port = client_address[0], client_address[1]
@@ -33,10 +47,12 @@ class HTTPServer:
         logger.info(f"Client {host}:{port} connected")
         logger.info(f"Server processing {host}:{port}")
 
-        req = HTTPRequest(client_socket)
-        req.parse()
+        client_thread = threading.Thread(
+            target=self.process,
+            args=(client_socket, host, port,)
+        )
+        client_thread.daemon = True
+        client_thread.start()
 
-        self.router.route(req)
-
-        client_socket.close()
-        logger.info(f"Client {host}:{port} disconnected")
+    def register(self, path, handler):
+        self.router.add(path, handler)
